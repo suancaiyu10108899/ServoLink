@@ -142,12 +142,12 @@ void MainWindow::setupUi()
 
     QHBoxLayout *rangeRow = new QHBoxLayout;
     m_spinServoMin = new QDoubleSpinBox;
-    m_spinServoMin->setRange(-120.0, 120.0);
+    m_spinServoMin->setRange(-180.0, 180.0);
     m_spinServoMin->setValue(-60.0);
     m_spinServoMin->setSingleStep(1.0);
     m_spinServoMin->setSuffix(" °");
     m_spinServoMax = new QDoubleSpinBox;
-    m_spinServoMax->setRange(-120.0, 120.0);
+    m_spinServoMax->setRange(-180.0, 180.0);
     m_spinServoMax->setValue(60.0);
     m_spinServoMax->setSingleStep(1.0);
     m_spinServoMax->setSuffix(" °");
@@ -209,8 +209,8 @@ void MainWindow::setupUi()
     addPosRow("舵面原点 θ₂", 0, 360, 155.0, "°", m_spinHornOrigin);
     addPosRow("舵面上限 θ₂", 0, 360, 120.0, "°", m_spinHornLimitUp);
     addPosRow("舵面下限 θ₂", 0, 360, 180.0, "°", m_spinHornLimitLo);
-    addPosRow("伺服上限 θ₁", -120, 120, 90.0, "°", m_spinServoLimitMin);
-    addPosRow("伺服下限 θ₁", -120, 120, -90.0, "°", m_spinServoLimitMax);
+    addPosRow("伺服上限 θ₁", -180, 180, 90.0, "°", m_spinServoLimitMin);
+    addPosRow("伺服下限 θ₁", -180, 180, -90.0, "°", m_spinServoLimitMax);
     leftLayout->addWidget(posGroup);
 
     // 操作按钮组

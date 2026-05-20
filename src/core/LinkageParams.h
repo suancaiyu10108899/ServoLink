@@ -89,9 +89,9 @@ struct LinkageParams
             result.message = "伺服臂最小角度必须小于最大角度";
             return result;
         }
-        if (servoAngleMin < -120.0 || servoAngleMax > 120.0) {
+        if (servoAngleMin < -180.0 || servoAngleMax > 180.0) {
             result.valid = false;
-            result.message = "伺服臂角度范围建议在 ±120° 以内";
+            result.message = "伺服臂角度范围须在 ±180° 以内";
             return result;
         }
 

@@ -109,9 +109,12 @@ void KinematicsView::drawMechanism(QPainter &painter)
     double d = m_params.baseDistance;
     double r2 = m_params.hornRadius;
 
-    // O1, O2 (fixed)
+    // O1, O2 (fixed): O₂ 坐标受基距倾角影响
+    double baseRad = qDegreesToRadians(m_params.baseAngle);
+    double ox2 = d * cos(baseRad);
+    double oy2 = d * sin(baseRad);
     QPointF o1 = worldToPixel(0, 0);
-    QPointF o2 = worldToPixel(d, 0);
+    QPointF o2 = worldToPixel(ox2, oy2);
 
     // A, B (moving)
     QPointF a = worldToPixel(m_state.jointA.x(), m_state.jointA.y());
@@ -180,9 +183,9 @@ void KinematicsView::drawMechanism(QPainter &painter)
                                  (m_state.jointA.y() + m_state.jointB.y()) / 2);
     painter.drawText(QPointF(lMid.x() + 4, lMid.y() - 4), "L");
 
-    // d label
-    QPointF dMid = worldToPixel(d / 2, 0);
-    painter.drawText(QPointF(dMid.x(), dMid.y() + 16), "d");
+    // d label (基距线中点)
+    QPointF dMid = worldToPixel(ox2 / 2, oy2 / 2);
+    painter.drawText(QPointF(dMid.x() - 6, dMid.y() + 16), "d");
 
     // Info box
     QString info = QString("θ₁=%1° θ₂=%2° μ=%3°")
