@@ -18,6 +18,7 @@
 #include "KinematicsView.h"
 #include "CurvePlot.h"
 #include "OptimizeDialog.h"
+#include "ReverseDialog.h"
 #include "LinkageParams.h"
 #include "LinkageAnalysis.h"
 #include "KinematicSolver.h"
@@ -54,6 +55,7 @@ private slots:
     void onRedo();
     void onPresetChanged(int index);
     void onOpenOptimizer();
+    void onOpenReverse();
 
     // 相位2: SpinBox-Slider 双向同步
     void onSpinServoArmChanged(double v);

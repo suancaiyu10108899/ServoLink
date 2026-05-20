@@ -16,6 +16,8 @@ add_library(servolink_ui STATIC
     CurvePlot.cpp
     OptimizeDialog.h
     OptimizeDialog.cpp
+    ReverseDialog.h
+    ReverseDialog.cpp
     StyleConstants.h
 )
 

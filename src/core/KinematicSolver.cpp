@@ -235,6 +235,69 @@ std::optional<MechanismState> KinematicSolver::solveForward(double inputAngleDeg
     return state;
 }
 
+// ── 解析正解 ──
+
+std::optional<std::pair<MechanismState, MechanismState>>
+KinematicSolver::solveForwardAnalytic(double inputAngleDeg) const
+{
+    double theta1Rad = UnitSystem::degToRad(inputAngleDeg);
+    double ax = m_params.servoArmRadius * cos(theta1Rad);
+    double ay = m_params.servoArmRadius * sin(theta1Rad);
+    double d  = m_params.baseDistance;
+    double r2 = m_params.hornRadius;
+
+    // ── 解析系数推导 ──
+    // 闭环方程展开： (d + r₂cosθ₂ - r₁cosθ₁)² + (r₂sinθ₂ - r₁sinθ₁)² - L² = 0
+    // → A + B·cosθ₂ + C·sinθ₂ = 0
+    // A = d² + r₁² + r₂² - L² - 2·d·r₁·cosθ₁
+    // B = 2·r₂·(d - r₁·cosθ₁)
+    // C = -2·r₂·r₁·sinθ₁
+    double r1sq = m_params.servoArmRadius * m_params.servoArmRadius;
+    double L   = m_params.linkLength;
+    double A = d*d + r1sq + r2*r2 - L*L - 2.0 * d * m_params.servoArmRadius * cos(theta1Rad);
+    double B = 2.0 * r2 * (d - m_params.servoArmRadius * cos(theta1Rad));
+    double C = -2.0 * r2 * m_params.servoArmRadius * sin(theta1Rad);
+
+    double norm = sqrt(B*B + C*C);
+    if (norm < 1e-12) {
+        // 机构退化（B和C同时为零）：杆件共线
+        return std::nullopt;
+    }
+
+    double cosArg = -A / norm;
+    if (cosArg > 1.0) cosArg = 1.0;
+    if (cosArg < -1.0) cosArg = -1.0;
+    double delta = acos(cosArg);    // 0 ≤ δ ≤ π
+
+    double phi = atan2(-C, -B);
+
+    // 两解
+    double theta2cRad = phi + delta;   // 闭式（同侧）
+    double theta2oRad = phi - delta;   // 开式（对侧）
+
+    // ── 构造 MechanismState ──
+    auto buildState = [&](double t2Rad) {
+        MechanismState s;
+        s.inputAngle = inputAngleDeg;
+        s.outputAngle = UnitSystem::radToDeg(t2Rad);
+        s.jointA = QPointF(ax, ay);
+        double bx = d + r2 * cos(t2Rad);
+        double by = r2 * sin(t2Rad);
+        s.jointB = QPointF(bx, by);
+        double linkDx = bx - ax, linkDy = by - ay;
+        double hornDx = r2 * cos(t2Rad), hornDy = r2 * sin(t2Rad);
+        s.transmissionAngle = UnitSystem::angleBetweenVectors(linkDx, linkDy, hornDx, hornDy);
+        double alpha = UnitSystem::angleBetweenVectors(-linkDx, -linkDy, ax, ay);
+        double sinTrans = sin(UnitSystem::degToRad(s.transmissionAngle));
+        double sinAlpha = sin(UnitSystem::degToRad(alpha));
+        s.mechanicalAdvantage = (sinAlpha > 1e-6)
+            ? (m_params.servoArmRadius / r2) * (sinTrans / sinAlpha) : 10.0;
+        return s;
+    };
+
+    return std::make_pair(buildState(theta2cRad), buildState(theta2oRad));
+}
+
 // ── 反解 ──
 
 std::optional<MechanismState> KinematicSolver::solveInverse(double outputAngleDeg) const

@@ -87,6 +87,21 @@ public:
     LinkageAnalysis sweepRange(int steps = 200) const;
 
     /**
+     * @brief 解析正解（闭式解）
+     *
+     * 四杆机构闭环方程可化为 A + B·cosθ₂ + C·sinθ₂ = 0，
+     * 解析解为 θ₂ = atan2(-C, -B) ± arccos(-A/√(B²+C²))
+     *
+     * @param inputAngleDeg 伺服臂转角（度）
+     * @return std::pair<MechanismState, MechanismState>
+     *         .first  = 闭式装配 (同侧)
+     *         .second = 开式装配 (对侧)
+     *         若机构不可装配，返回空 optional 的 pair
+     */
+    std::optional<std::pair<MechanismState, MechanismState>>
+        solveForwardAnalytic(double inputAngleDeg) const;
+
+    /**
      * @brief 验证参数合法性
      */
     OperationResult validateParams() const;

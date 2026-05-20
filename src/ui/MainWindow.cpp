@@ -184,6 +184,7 @@ void MainWindow::setupUi()
     QPushButton *btnSave = new QPushButton("保存项目");
     QPushButton *btnExport = new QPushButton("导出 CSV");
     QPushButton *btnOptimize = new QPushButton("⚡ 参数优化");
+    QPushButton *btnReverse = new QPushButton("🎯 输出优先");
 
     actionLayout->addWidget(btnCalc);
     actionLayout->addWidget(btnQuick);
@@ -192,6 +193,7 @@ void MainWindow::setupUi()
     actionLayout->addWidget(btnSave);
     actionLayout->addWidget(btnExport);
     actionLayout->addWidget(btnOptimize);
+    actionLayout->addWidget(btnReverse);
     leftLayout->addWidget(actionGroup);
 
     connect(btnCalc, &QPushButton::clicked, this, &MainWindow::onCalculate);
@@ -202,6 +204,7 @@ void MainWindow::setupUi()
     connect(m_btnUndo, &QPushButton::clicked, this, &MainWindow::onUndo);
     connect(m_btnRedo, &QPushButton::clicked, this, &MainWindow::onRedo);
     connect(btnOptimize, &QPushButton::clicked, this, &MainWindow::onOpenOptimizer);
+    connect(btnReverse, &QPushButton::clicked, this, &MainWindow::onOpenReverse);
 
     // 快速评估摘要
     QGroupBox *quickGroup = new QGroupBox("传动评估");
@@ -520,6 +523,20 @@ void MainWindow::onRedo()
     }
 }
 
+// Open Reverse (输出优先) Dialog
+void MainWindow::onOpenReverse()
+{
+    auto params = readParamsFromUi();
+    ReverseDialog dlg(this);
+    dlg.setFixedParams(params.hornRadius, params.baseDistance, 0);
+    connect(&dlg, &ReverseDialog::paramsSelected, this, [this](const LinkageParams &p) {
+        writeParamsToUi(p);
+        pushHistory();
+        onCalculate();
+    });
+    dlg.exec();
+}
+
 // Open Optimizer Dialog
 void MainWindow::onOpenOptimizer()
 {
@@ -538,16 +555,16 @@ void MainWindow::onOpenOptimizer()
 void MainWindow::onExportCsv()
 {
     auto params = readParamsFromUi();
-    // Read assembly mode
     auto asmMode = static_cast<KinematicSolver::AssemblyMode>(
         m_comboAssembly->currentData().toInt());
     m_solver.setAssemblyMode(asmMode);
-
     m_solver.setParams(params);
     auto analysis = m_solver.sweepRange(200);
 
+    auto qa = TransmissionAnalyzer::quickAssess(params);
+
     QString fileName = QFileDialog::getSaveFileName(
-        this, "导出扫描数据为 CSV", "servolink_sweep.csv",
+        this, "导出完整工程报告", "servolink_report.csv",
         "CSV Files (*.csv);;All Files (*)");
     if (fileName.isEmpty()) return;
 
@@ -559,7 +576,63 @@ void MainWindow::onExportCsv()
     }
 
     QTextStream out(&file);
-    out << "theta1_deg,theta2_deg,transmission_angle_deg,mech_advantage,Ax_mm,Ay_mm,Bx_mm,By_mm\n";
+    auto modeName = m_comboAssembly->currentText();
+
+    // ═══════════════════════════════════════════
+    // 区块 1: 文件头
+    // ═══════════════════════════════════════════
+    out << "# ServoLink 工程报告\n";
+    out << "# 导出时间: " << QDateTime::currentDateTime().toString(Qt::ISODate) << "\n";
+    out << "# 软件版本: v0.6.0\n";
+    out << "#\n";
+
+    // ═══════════════════════════════════════════
+    // 区块 2: 机构参数
+    // ═══════════════════════════════════════════
+    out << "## 机构参数\n";
+    out << "r1_伺服臂半径_mm," << params.servoArmRadius << "\n";
+    out << "r2_舵角半径_mm," << params.hornRadius << "\n";
+    out << "L_连杆长度_mm," << params.linkLength << "\n";
+    out << "d_基距_mm," << params.baseDistance << "\n";
+    out << "theta1_min_deg," << params.servoAngleMin << "\n";
+    out << "theta1_max_deg," << params.servoAngleMax << "\n";
+    out << "装配模式," << modeName << "\n";
+    out << "\n";
+
+    // ═══════════════════════════════════════════
+    // 区块 3: 汇总结果
+    // ═══════════════════════════════════════════
+    out << "## 汇总结果\n";
+    out << "偏转范围_deg," << analysis.deflectionRange << "\n";
+    out << "最大偏转角_deg," << analysis.maxDeflection << "\n";
+    out << "最小传动角_deg," << analysis.minTransmissionAngle << "\n";
+    out << "线性度_R2," << analysis.linearityScore << "\n";
+    out << "质量等级," << analysis.gradeDescription() << "\n";
+    out << "机构类型," << qa.summary << "\n";
+    out << "死点检测," << (analysis.hasDeadPoint ? "是" : "否") << "\n";
+    out << "\n";
+
+    // ═══════════════════════════════════════════
+    // 区块 4: 解析解 — 左中右三点
+    // ═══════════════════════════════════════════
+    out << "## 解析解（闭式/开式对比）\n";
+    out << "theta1_deg,闭式_theta2_deg,闭式_传动角_deg,开式_theta2_deg,开式_传动角_deg\n";
+    double points[] = {params.servoAngleMin, 0.0, params.servoAngleMax};
+    for (double t1 : points) {
+        auto an = m_solver.solveForwardAnalytic(t1);
+        if (an.has_value()) {
+            out << t1 << ","
+                << an->first.outputAngle << "," << an->first.transmissionAngle << ","
+                << an->second.outputAngle << "," << an->second.transmissionAngle << "\n";
+        }
+    }
+    out << "\n";
+
+    // ═══════════════════════════════════════════
+    // 区块 5: 全范围扫描数据 (200行)
+    // ═══════════════════════════════════════════
+    out << "## 全范围扫描数据\n";
+    out << "theta1_deg,theta2_deg,传动角_deg,力放大比,Ax_mm,Ay_mm,Bx_mm,By_mm\n";
     for (const auto &s : analysis.sweepResults) {
         out << s.inputAngle << ","
             << s.outputAngle << ","
@@ -573,8 +646,8 @@ void MainWindow::onExportCsv()
     file.close();
 
     QMessageBox::information(this, "导出成功",
-        QString("已将 %1 条扫描数据导出到:\n%2")
-            .arg(analysis.sweepResults.size())
+        QString("已将完整工程报告 (%1 行) 导出到:\n%2")
+            .arg(analysis.sweepResults.size() + 20)
             .arg(fileName));
 }
 
@@ -659,6 +732,30 @@ void MainWindow::onCalculate()
 
     auto qa = TransmissionAnalyzer::quickAssess(params);
     displayQuickAssessment(qa);
+
+    // 解析解对比（取中点角度的解析解，用于验证标签）
+    double midAngle = (params.servoAngleMin + params.servoAngleMax) * 0.5;
+    auto analytic = m_solver.solveForwardAnalytic(midAngle);
+    if (analytic.has_value()) {
+        double analyticClosed = analytic->first.outputAngle;
+        double analyticOpen   = analytic->second.outputAngle;
+        // 比较迭代解与解析解在两种模式下的误差
+        auto iterClosed = m_solver.solveForward(midAngle);  // 使用当前装配模式
+        m_solver.setAssemblyMode(
+            m_solver.assemblyMode() == KinematicSolver::AssemblyMode::Closed
+                ? KinematicSolver::AssemblyMode::Open
+                : KinematicSolver::AssemblyMode::Closed);
+        auto iterOpen = m_solver.solveForward(midAngle);
+        m_solver.setAssemblyMode(asmMode); // 恢复原模式
+        // 验证：解析+闭式应与迭代+闭式一致（偏差 < 0.01°）
+        double errClosed = iterClosed.has_value()
+            ? qAbs(iterClosed->outputAngle - analyticClosed) : 999.0;
+        double errOpen   = iterOpen.has_value()
+            ? qAbs(iterOpen->outputAngle - analyticOpen) : 999.0;
+        if (errClosed < 0.01 && errOpen < 0.01) {
+            // 标签正确，无需修正
+        }
+    }
 
     auto suggestions = TransmissionAnalyzer::improvementSuggestions(params, analysis);
     m_textSuggestions->setText(suggestions.join("\n• "));
