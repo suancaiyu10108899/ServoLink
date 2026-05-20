@@ -1,0 +1,53 @@
+# Build outputs
+/build/
+/out/
+/bin/
+/dist/
+
+# CMake
+CMakeUserPresets.json
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+compile_commands.json
+install_manifest.txt
+
+# VS Code
+.vscode/*.log
+
+# Visual Studio / MSVC
+*.o
+*.obj
+*.exe
+*.dll
+*.lib
+*.pdb
+*.ilk
+*.idb
+*.user
+*.suo
+*.vcxproj*
+*.vcxproj.user
+*.manifest
+
+# Qt generated files
+*.autosave
+*.qtc_clangd
+*.qm
+*.rcc
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# ServoLink: 个人学习笔记不上传公开仓库
+/docs/personal-learning/
+
+# IDEs / OS
+.idea/
+.DS_Store
+Thumbs.db

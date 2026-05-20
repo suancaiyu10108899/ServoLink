@@ -1,0 +1,63 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name": "win-msvc-debug",
+            "displayName": "Windows MSVC Debug",
+            "description": "Windows 下使用 MSVC + Qt 6 的 Debug 构建",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_PREFIX_PATH": "D:/Qt/6.11.0/msvc2022_64",
+                "CMAKE_CXX_COMPILER": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "win-msvc-release",
+            "displayName": "Windows MSVC Release",
+            "description": "Windows 下使用 MSVC + Qt 6 的 Release 构建",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_PREFIX_PATH": "D:/Qt/6.11.0/msvc2022_64",
+                "CMAKE_CXX_COMPILER": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "win-msvc-debug",
+            "configurePreset": "win-msvc-debug"
+        },
+        {
+            "name": "win-msvc-release",
+            "configurePreset": "win-msvc-release"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "win-msvc-debug",
+            "configurePreset": "win-msvc-debug",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "timeout": 60
+            }
+        }
+    ]
+}
