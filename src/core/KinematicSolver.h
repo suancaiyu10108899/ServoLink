@@ -32,11 +32,30 @@
 class KinematicSolver
 {
 public:
+    /**
+     * @brief 装配模式
+     *
+     * 四杆机构的闭环方程对 θ₂ 有两个解，对应两种装配模式：
+     *
+     *   Closed (闭式) — A 和 B 在机架 O₁O₂ 同侧（航模标准配置）
+     *     初值：θ₂ = ψ - ∠AO₂B
+     *
+     *   Open (开式) — A 和 B 分居机架 O₁O₂ 两侧
+     *     初值：θ₂ = ψ + ∠AO₂B
+     */
+    enum class AssemblyMode {
+        Closed,   // 闭式：同侧（默认）
+        Open      // 开式：对侧
+    };
+
     KinematicSolver() = default;
     explicit KinematicSolver(const LinkageParams &params);
 
     void setParams(const LinkageParams &params);
     LinkageParams params() const { return m_params; }
+
+    void setAssemblyMode(AssemblyMode mode) { m_assemblyMode = mode; }
+    AssemblyMode assemblyMode() const { return m_assemblyMode; }
 
     /**
      * @brief 正解：给定 θ₁（伺服角度），求机构完整状态
@@ -74,6 +93,7 @@ public:
 
 private:
     LinkageParams m_params;
+    AssemblyMode m_assemblyMode = AssemblyMode::Closed;
 
     /**
      * @brief 计算球头A的坐标 (从 O₁ 出发)

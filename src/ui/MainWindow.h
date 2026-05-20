@@ -129,6 +129,9 @@ private:
     QPushButton *m_btnPlay = nullptr;
     QPushButton *m_btnPause = nullptr;
     QPushButton *m_btnStop = nullptr;
+
+    // 装配模式
+    QComboBox *m_comboAssembly = nullptr;
 };
 
 #endif // MAINWINDOW_H

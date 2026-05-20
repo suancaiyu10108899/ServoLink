@@ -159,6 +159,15 @@ void MainWindow::setupUi()
     rangeRow->addStretch();
     paramLayout->addLayout(rangeRow);
 
+    // 装配模式
+    QLabel *asmLabel = new QLabel("装配模式");
+    asmLabel->setStyleSheet("font-weight: bold; margin-top: 6px;");
+    paramLayout->addWidget(asmLabel);
+    m_comboAssembly = new QComboBox;
+    m_comboAssembly->addItem("同侧（闭式装配）", static_cast<int>(KinematicSolver::AssemblyMode::Closed));
+    m_comboAssembly->addItem("对侧（开式装配）", static_cast<int>(KinematicSolver::AssemblyMode::Open));
+    paramLayout->addWidget(m_comboAssembly);
+
     leftLayout->addWidget(paramGroup);
 
     // 操作按钮组
@@ -362,6 +371,12 @@ void MainWindow::setupConnections()
     // Preset combo
     connect(m_comboPresets, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MainWindow::onPresetChanged);
+
+    // Assembly mode combo
+    connect(m_comboAssembly, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, [this]() {
+        onCalculate();
+    });
 }
 
 void MainWindow::applyStyle()
@@ -523,6 +538,11 @@ void MainWindow::onOpenOptimizer()
 void MainWindow::onExportCsv()
 {
     auto params = readParamsFromUi();
+    // Read assembly mode
+    auto asmMode = static_cast<KinematicSolver::AssemblyMode>(
+        m_comboAssembly->currentData().toInt());
+    m_solver.setAssemblyMode(asmMode);
+
     m_solver.setParams(params);
     auto analysis = m_solver.sweepRange(200);
 
@@ -627,6 +647,11 @@ void MainWindow::onCalculate()
         QMessageBox::warning(this, "参数错误", vr.message);
         return;
     }
+
+    // Read assembly mode
+    auto asmMode = static_cast<KinematicSolver::AssemblyMode>(
+        m_comboAssembly->currentData().toInt());
+    m_solver.setAssemblyMode(asmMode);
 
     m_solver.setParams(params);
     auto analysis = m_solver.sweepRange(200);

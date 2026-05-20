@@ -7,6 +7,7 @@
 
 KinematicSolver::KinematicSolver(const LinkageParams &params)
     : m_params(params)
+    , m_assemblyMode(AssemblyMode::Closed)
 {
 }
 
@@ -179,8 +180,12 @@ std::optional<MechanismState> KinematicSolver::solveForward(double inputAngleDeg
     // O₂A 的方向角
     double angleO2A = atan2(ay, ax - d);  // 从 O₂ 指向 A
 
-    // 闭式装配：B 在 O₂A 的"下方"（负角度方向）
-    double initialTheta2 = angleO2A - angleAO2B;
+    // 根据装配模式选择初值的符号
+    // 闭式 (Closed)：B 在 O₂A 的"下方" → 同侧
+    // 开式 (Open) ：B 在 O₂A 的"上方" → 对侧
+    double initialTheta2 = (m_assemblyMode == AssemblyMode::Closed)
+        ? angleO2A - angleAO2B
+        : angleO2A + angleAO2B;
 
     // 迭代
     auto result = newtonRaphson(theta1Rad, initialTheta2);
