@@ -68,8 +68,6 @@ const QString GlobalStyleSheet = R"(
     QWidget {
         background-color: #F8FAFC;
         color: #1E293B;
-        font-family: "Segoe UI";
-        font-size: 12px;
     }
     QMainWindow {
         background-color: #F8FAFC;
@@ -117,6 +115,26 @@ const QString GlobalStyleSheet = R"(
         font-weight: bold;
         color: #2563EB;
         font-size: 14px;
+    }
+    QTabWidget::pane {
+        border: 1px solid #E2E8F0;
+        background-color: #F8FAFC;
+    }
+    QTabBar::tab {
+        background-color: #FFFFFF;
+        color: #1E293B;
+        padding: 6px 16px;
+        border: 1px solid #E2E8F0;
+        border-bottom: none;
+        font-weight: bold;
+    }
+    QTabBar::tab:selected {
+        background-color: #F8FAFC;
+        color: #2563EB;
+        border-bottom: 2px solid #2563EB;
+    }
+    QTabBar::tab:hover {
+        background-color: #EFF6FF;
     }
     QLabel#sectionTitle {
         font-weight: bold;

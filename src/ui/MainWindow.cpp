@@ -142,12 +142,12 @@ void MainWindow::setupUi()
 
     QHBoxLayout *rangeRow = new QHBoxLayout;
     m_spinServoMin = new QDoubleSpinBox;
-    m_spinServoMin->setRange(-120.0, 0.0);
+    m_spinServoMin->setRange(-120.0, 120.0);
     m_spinServoMin->setValue(-60.0);
     m_spinServoMin->setSingleStep(1.0);
     m_spinServoMin->setSuffix(" °");
     m_spinServoMax = new QDoubleSpinBox;
-    m_spinServoMax->setRange(0.0, 120.0);
+    m_spinServoMax->setRange(-120.0, 120.0);
     m_spinServoMax->setValue(60.0);
     m_spinServoMax->setSingleStep(1.0);
     m_spinServoMax->setSuffix(" °");
