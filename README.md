@@ -55,32 +55,24 @@ training/        独立训练项目
 
 ## 构建与运行
 
-### Windows 终端前置步骤（MSVC 环境）
+### 首次配置（仅一次，或 CMakeLists 变更后）
 
-```powershell
 & 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
 cd D:\Dev\ServoLink
-```
-
-### 配置与编译
-
-```powershell
 cmake --preset win-msvc-debug
+
+### 日常编译 + 测试 + 运行（每次修改代码后）
+
+& 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
+cd D:\Dev\ServoLink
 cmake --build --preset win-msvc-debug
-```
-
-### 测试
-
-```powershell
-cd build/win-msvc-debug
+cd build\win-msvc-debug
 ctest --output-on-failure
-```
-
-### 运行
-
-```powershell
+cd D:\Dev\ServoLink
 .\build\win-msvc-debug\src\app\ServoLink.exe
-```
+
+> 提示：鼠标三击某行即可选中整行，Ctrl+C 复制到终端运行。
+> 如果报 LNK1168 错误，说明上一个 ServoLink.exe 还在运行，先关掉窗口即可。
 
 ## 核心功能
 
