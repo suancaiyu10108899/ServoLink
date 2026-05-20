@@ -677,9 +677,17 @@ void MainWindow::onExportCsv()
     out << "r2_舵角半径_mm," << params.hornRadius << "\n";
     out << "L_连杆长度_mm," << params.linkLength << "\n";
     out << "d_基距_mm," << params.baseDistance << "\n";
+    out << "基距倾角_deg," << params.baseAngle << "\n";
     out << "theta1_min_deg," << params.servoAngleMin << "\n";
     out << "theta1_max_deg," << params.servoAngleMax << "\n";
     out << "装配模式," << modeName << "\n";
+    out << "\n";
+    out << "## 定位标注\n";
+    out << "舵面原点_theta2_deg," << params.hornOriginDeg << "\n";
+    out << "舵面上限_theta2_deg," << params.hornLimitUpDeg << "\n";
+    out << "舵面下限_theta2_deg," << params.hornLimitLoDeg << "\n";
+    out << "伺服上限_theta1_deg," << params.servoLimitMinDeg << "\n";
+    out << "伺服下限_theta1_deg," << params.servoLimitMaxDeg << "\n";
     out << "\n";
 
     // ═══════════════════════════════════════════
@@ -712,7 +720,31 @@ void MainWindow::onExportCsv()
     out << "\n";
 
     // ═══════════════════════════════════════════
-    // 区块 5: 全范围扫描数据 (200行)
+    // 区块 5: 多项式拟合系数
+    // ═══════════════════════════════════════════
+    out << "## 多项式拟合系数 (θ₂ ≈ f(θ₁))\n";
+    {
+        auto &sweep = analysis.sweepResults;
+        if (sweep.size() >= 3) {
+            int n = sweep.size();
+            double sx=0,sy=0,sxy=0,sx2=0;
+            for (auto &s : sweep) { double x=s.inputAngle,y=s.outputAngle; sx+=x;sy+=y;sxy+=x*y;sx2+=x*x; }
+            double den = n*sx2-sx*sx;
+            double a1 = (n*sxy-sx*sy)/den;
+            double b1 = (sy-a1*sx)/n;
+            double ssRes=0,ssTot=0,meanY=sy/n;
+            for (auto &s : sweep) { double yp=a1*s.inputAngle+b1; ssRes+=(s.outputAngle-yp)*(s.outputAngle-yp); ssTot+=(s.outputAngle-meanY)*(s.outputAngle-meanY); }
+            double r2_1 = ssTot>1e-10 ? 1.0-ssRes/ssTot : 1.0;
+            out << "线性_a0," << b1 << "\n";
+            out << "线性_a1," << a1 << "\n";
+            out << "线性_R2," << r2_1 << "\n";
+            out << "\n";
+        }
+    }
+    out << "\n";
+
+    // ═══════════════════════════════════════════
+    // 区块 6: 全范围扫描数据 (200行)
     // ═══════════════════════════════════════════
     out << "## 全范围扫描数据\n";
     out << "theta1_deg,theta2_deg,传动角_deg,力放大比,Ax_mm,Ay_mm,Bx_mm,By_mm\n";
