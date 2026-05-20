@@ -26,3 +26,13 @@
 cd D:\Dev\ServoLink
 cmake --preset win-msvc-debug
 cmake --build --preset win-msvc-debug
+```
+
+## 🔴 铁律：写完代码必须同步写文档
+任何功能性改动（新功能 / 修复Bug / 重构）完成后，MUST 同步更新：
+- `docs/devlog/` 开发日志（记录变更内容）
+- `docs/adr/` 架构决策记录（如有设计决策）
+- `docs/debug-log/` 调试日志（如有排查过程）
+- `README.md`（如影响项目概览或版本号）
+
+此规则不可跳过。每次改动都必须在 commit 前确保文档已更新。
