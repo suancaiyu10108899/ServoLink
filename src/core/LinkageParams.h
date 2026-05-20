@@ -37,6 +37,12 @@ struct LinkageParams
     double baseDistance = 45.0;     // d ：基距 —— 伺服旋转中心到舵面铰链中心的距离 (mm)
     double servoAngleMin = -60.0;   // θ₁ 最小：伺服臂最小转角 (°)
     double servoAngleMax = 60.0;    // θ₁ 最大：伺服臂最大转角 (°)
+    double baseAngle = 0.0;         // 基距倾角：O₁O₂ 连线与水平面的倾斜角 (°)
+    double hornOriginDeg = 155.0;   // 舵面原点（中立）时的摇杆角 θ₂
+    double hornLimitUpDeg = 120.0;  // 舵面上限（最大上偏）时的摇杆角 θ₂
+    double hornLimitLoDeg = 180.0;  // 舵面下限（最大下偏）时的摇杆角 θ₂
+    double servoLimitMinDeg = -90.0; // 舵机物理限位最小 (°)
+    double servoLimitMaxDeg = 90.0;  // 舵机物理限位最大 (°)
 
     /**
      * @brief 验证参数是否在合理的物理范围内
@@ -129,8 +135,14 @@ struct LinkageParams
         obj["hornRadius"] = hornRadius;
         obj["linkLength"] = linkLength;
         obj["baseDistance"] = baseDistance;
+        obj["baseAngle"] = baseAngle;
         obj["servoAngleMin"] = servoAngleMin;
         obj["servoAngleMax"] = servoAngleMax;
+        obj["hornOriginDeg"] = hornOriginDeg;
+        obj["hornLimitUpDeg"] = hornLimitUpDeg;
+        obj["hornLimitLoDeg"] = hornLimitLoDeg;
+        obj["servoLimitMinDeg"] = servoLimitMinDeg;
+        obj["servoLimitMaxDeg"] = servoLimitMaxDeg;
         return obj;
     }
 
@@ -141,8 +153,14 @@ struct LinkageParams
         p.hornRadius = obj["hornRadius"].toDouble(18.0);
         p.linkLength = obj["linkLength"].toDouble(35.0);
         p.baseDistance = obj["baseDistance"].toDouble(45.0);
+        p.baseAngle = obj["baseAngle"].toDouble(0.0);
         p.servoAngleMin = obj["servoAngleMin"].toDouble(-60.0);
         p.servoAngleMax = obj["servoAngleMax"].toDouble(60.0);
+        p.hornOriginDeg = obj["hornOriginDeg"].toDouble(155.0);
+        p.hornLimitUpDeg = obj["hornLimitUpDeg"].toDouble(120.0);
+        p.hornLimitLoDeg = obj["hornLimitLoDeg"].toDouble(180.0);
+        p.servoLimitMinDeg = obj["servoLimitMinDeg"].toDouble(-90.0);
+        p.servoLimitMaxDeg = obj["servoLimitMaxDeg"].toDouble(90.0);
         return p;
     }
 

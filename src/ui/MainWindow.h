@@ -131,9 +131,22 @@ private:
     QPushButton *m_btnPlay = nullptr;
     QPushButton *m_btnPause = nullptr;
     QPushButton *m_btnStop = nullptr;
+    QSlider *m_animSlider = nullptr;
 
     // 装配模式
     QComboBox *m_comboAssembly = nullptr;
+
+    // 定位标注
+    QDoubleSpinBox *m_spinBaseAngle = nullptr;
+    QDoubleSpinBox *m_spinHornOrigin = nullptr;
+    QDoubleSpinBox *m_spinHornLimitUp = nullptr;
+    QDoubleSpinBox *m_spinHornLimitLo = nullptr;
+    QDoubleSpinBox *m_spinServoLimitMin = nullptr;
+    QDoubleSpinBox *m_spinServoLimitMax = nullptr;
+
+    // 解析式 Tab
+    QTextEdit *m_textFormula = nullptr;
+    QTextEdit *m_textFit = nullptr;
 };
 
 #endif // MAINWINDOW_H

@@ -65,9 +65,12 @@ double KinematicSolver::residual(double theta2Rad, double ax, double ay) const
     double r2 = m_params.hornRadius;
     double d = m_params.baseDistance;
     double L = m_params.linkLength;
+    double baseRad = UnitSystem::degToRad(m_params.baseAngle);
+    double ox2 = d * cos(baseRad);
+    double oy2 = d * sin(baseRad);
 
-    double bx = d + r2 * cos(theta2Rad);
-    double by = r2 * sin(theta2Rad);
+    double bx = ox2 + r2 * cos(theta2Rad);
+    double by = oy2 + r2 * sin(theta2Rad);
 
     double dx = bx - ax;
     double dy = by - ay;
@@ -90,9 +93,12 @@ double KinematicSolver::residualDerivative(double theta2Rad, double ax, double a
 {
     double r2 = m_params.hornRadius;
     double d = m_params.baseDistance;
+    double baseRad = UnitSystem::degToRad(m_params.baseAngle);
+    double ox2 = d * cos(baseRad);
+    double oy2 = d * sin(baseRad);
 
-    double bx = d + r2 * cos(theta2Rad);
-    double by = r2 * sin(theta2Rad);
+    double bx = ox2 + r2 * cos(theta2Rad);
+    double by = oy2 + r2 * sin(theta2Rad);
 
     double dx = bx - ax;
     double dy = by - ay;
@@ -165,7 +171,12 @@ std::optional<MechanismState> KinematicSolver::solveForward(double inputAngleDeg
     // ── 初值估计 ──
     // 假定连杆 L 远长于 r₁ 和 r₂，则 θ₂ ≈ π - θ₁（近似反向）
     // 更精确的几何初值：
-    double distO2ToA = UnitSystem::distance(ax, ay, d, 0.0);
+    // O₂ 坐标受基距倾角影响
+    double baseRad = UnitSystem::degToRad(m_params.baseAngle);
+    double ox2 = d * cos(baseRad);
+    double oy2 = d * sin(baseRad);
+
+    double distO2ToA = UnitSystem::distance(ax, ay, ox2, oy2);
 
     // 三角形 O₂-A-B：已知 O₂A、AB(=L)、O₂B(=r₂)
     // 用余弦定理求 ∠AO₂B
@@ -178,7 +189,7 @@ std::optional<MechanismState> KinematicSolver::solveForward(double inputAngleDeg
     double angleAO2B = acos(cosAOB);
 
     // O₂A 的方向角
-    double angleO2A = atan2(ay, ax - d);  // 从 O₂ 指向 A
+    double angleO2A = atan2(ay - oy2, ax - ox2);  // 从 O₂ 指向 A
 
     // 根据装配模式选择初值的符号
     // 闭式 (Closed)：B 在 O₂A 的"下方" → 同侧
@@ -202,13 +213,11 @@ std::optional<MechanismState> KinematicSolver::solveForward(double inputAngleDeg
     state.jointA = QPointF(ax, ay);
 
     // B 点坐标
-    double bx = d + r2 * cos(theta2Rad);
-    double by = r2 * sin(theta2Rad);
+    double bx = ox2 + r2 * cos(theta2Rad);
+    double by = oy2 + r2 * sin(theta2Rad);
     state.jointB = QPointF(bx, by);
 
     // 传动角 = 连杆 AB 与舵角 O₂B 的夹角
-    // 连杆方向：A → B
-    // 舵角方向：O₂ → B（即 (r₂·cosθ₂, r₂·sinθ₂)）
     double linkDx = bx - ax;
     double linkDy = by - ay;
     double hornDx = r2 * cos(theta2Rad);
@@ -247,16 +256,19 @@ KinematicSolver::solveForwardAnalytic(double inputAngleDeg) const
     double r2 = m_params.hornRadius;
 
     // ── 解析系数推导 ──
-    // 闭环方程展开： (d + r₂cosθ₂ - r₁cosθ₁)² + (r₂sinθ₂ - r₁sinθ₁)² - L² = 0
+    // 闭环方程展开（含基距倾角）：
+    // O₂ = (d·cosα, d·sinα)
+    // |A + O₂ - O₁|² = L² → |B - A|² = L²
     // → A + B·cosθ₂ + C·sinθ₂ = 0
-    // A = d² + r₁² + r₂² - L² - 2·d·r₁·cosθ₁
-    // B = 2·r₂·(d - r₁·cosθ₁)
-    // C = -2·r₂·r₁·sinθ₁
-    double r1sq = m_params.servoArmRadius * m_params.servoArmRadius;
-    double L   = m_params.linkLength;
-    double A = d*d + r1sq + r2*r2 - L*L - 2.0 * d * m_params.servoArmRadius * cos(theta1Rad);
-    double B = 2.0 * r2 * (d - m_params.servoArmRadius * cos(theta1Rad));
-    double C = -2.0 * r2 * m_params.servoArmRadius * sin(theta1Rad);
+    double baseRad = UnitSystem::degToRad(m_params.baseAngle);
+    double ox2 = d * cos(baseRad);
+    double oy2 = d * sin(baseRad);
+    double r1 = m_params.servoArmRadius;
+    double L  = m_params.linkLength;
+    double A = ox2*ox2 + oy2*oy2 + r1*r1 + r2*r2 - L*L
+               - 2.0 * r1 * (ox2 * cos(theta1Rad) + oy2 * sin(theta1Rad));
+    double B = 2.0 * r2 * (ox2 - r1 * cos(theta1Rad));
+    double C = 2.0 * r2 * (oy2 - r1 * sin(theta1Rad));
 
     double norm = sqrt(B*B + C*C);
     if (norm < 1e-12) {
@@ -281,8 +293,8 @@ KinematicSolver::solveForwardAnalytic(double inputAngleDeg) const
         s.inputAngle = inputAngleDeg;
         s.outputAngle = UnitSystem::radToDeg(t2Rad);
         s.jointA = QPointF(ax, ay);
-        double bx = d + r2 * cos(t2Rad);
-        double by = r2 * sin(t2Rad);
+        double bx = ox2 + r2 * cos(t2Rad);
+        double by = oy2 + r2 * sin(t2Rad);
         s.jointB = QPointF(bx, by);
         double linkDx = bx - ax, linkDy = by - ay;
         double hornDx = r2 * cos(t2Rad), hornDy = r2 * sin(t2Rad);

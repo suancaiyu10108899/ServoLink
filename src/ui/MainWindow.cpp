@@ -168,7 +168,50 @@ void MainWindow::setupUi()
     m_comboAssembly->addItem("对侧（开式装配）", static_cast<int>(KinematicSolver::AssemblyMode::Open));
     paramLayout->addWidget(m_comboAssembly);
 
+    // 基距倾角
+    QHBoxLayout *baseAngleRow = new QHBoxLayout;
+    QLabel *baLabel = new QLabel("基距倾角");
+    baLabel->setStyleSheet("font-weight: bold; margin-top: 6px;");
+    m_spinBaseAngle = new QDoubleSpinBox;
+    m_spinBaseAngle->setRange(-90.0, 90.0);
+    m_spinBaseAngle->setValue(0.0);
+    m_spinBaseAngle->setSingleStep(1.0);
+    m_spinBaseAngle->setSuffix(" °");
+    baseAngleRow->addWidget(baLabel);
+    baseAngleRow->addWidget(m_spinBaseAngle);
+    baseAngleRow->addStretch();
+    paramLayout->addLayout(baseAngleRow);
+    connect(m_spinBaseAngle, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, [this]() { onCalculate(); });
+
     leftLayout->addWidget(paramGroup);
+
+    // 定位标注
+    QGroupBox *posGroup = new QGroupBox("定位标注");
+    QVBoxLayout *posLayout = new QVBoxLayout(posGroup);
+    posLayout->setSpacing(3);
+    auto addPosRow = [&](const QString &label, double min, double max, double def, const QString &unit, QDoubleSpinBox *&spin) {
+        QHBoxLayout *row = new QHBoxLayout;
+        QLabel *lbl = new QLabel(label);
+        lbl->setFixedWidth(100);
+        spin = new QDoubleSpinBox;
+        spin->setRange(min, max);
+        spin->setValue(def);
+        spin->setSingleStep(1.0);
+        spin->setSuffix(QString(" %1").arg(unit));
+        row->addWidget(lbl);
+        row->addWidget(spin);
+        row->addStretch();
+        posLayout->addLayout(row);
+        connect(spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+                this, [this]() { onCalculate(); });
+    };
+    addPosRow("舵面原点 θ₂", 0, 360, 155.0, "°", m_spinHornOrigin);
+    addPosRow("舵面上限 θ₂", 0, 360, 120.0, "°", m_spinHornLimitUp);
+    addPosRow("舵面下限 θ₂", 0, 360, 180.0, "°", m_spinHornLimitLo);
+    addPosRow("伺服上限 θ₁", -120, 120, 90.0, "°", m_spinServoLimitMin);
+    addPosRow("伺服下限 θ₁", -120, 120, -90.0, "°", m_spinServoLimitMax);
+    leftLayout->addWidget(posGroup);
 
     // 操作按钮组
     QGroupBox *actionGroup = new QGroupBox("操作");
@@ -310,6 +353,22 @@ void MainWindow::setupUi()
         m_btnStop->setEnabled(false);
     });
 
+    // 动画进度条
+    m_animSlider = new QSlider(Qt::Horizontal);
+    m_animSlider->setRange(0, 200);
+    m_animSlider->setValue(0);
+    vizLayout->addWidget(m_animSlider);
+    connect(m_animSlider, &QSlider::valueChanged, [this](int v) {
+        if (m_kinematicsView && !m_kinematicsView->isPlaying())
+            m_kinematicsView->setFrame(v);
+    });
+    connect(m_kinematicsView, &KinematicsView::frameChanged, [this](int frame) {
+        m_animSlider->blockSignals(true);
+        m_animSlider->setValue(frame);
+        m_animSlider->setMaximum(m_kinematicsView->frameCount() - 1);
+        m_animSlider->blockSignals(false);
+    });
+
     m_tabWidget->addTab(vizTab, "🔧 机构视图");
 
     // Tab 3: 曲线图
@@ -338,7 +397,31 @@ void MainWindow::setupUi()
         m_curvePlot->setCurveType(type);
     });
 
-    m_tabWidget->addTab(curveTab, "📈 特性曲线");
+     m_tabWidget->addTab(curveTab, "📈 特性曲线");
+
+    // Tab 4: 解析式
+    QWidget *formulaTab = new QWidget;
+    QVBoxLayout *formulaLayout = new QVBoxLayout(formulaTab);
+    formulaLayout->setContentsMargins(0, 0, 0, 0);
+    formulaLayout->setSpacing(4);
+
+    QGroupBox *fGroup = new QGroupBox("解析公式 (代入当前参数)");
+    QVBoxLayout *fLayout = new QVBoxLayout(fGroup);
+    m_textFormula = new QTextEdit;
+    m_textFormula->setReadOnly(true);
+    m_textFormula->setFont(QFont("Cascadia Code", 10));
+    fLayout->addWidget(m_textFormula);
+    formulaLayout->addWidget(fGroup);
+
+    QGroupBox *fitGroup = new QGroupBox("多项式拟合系数 (θ₂ ≈ f(θ₁))");
+    QVBoxLayout *fitLayout = new QVBoxLayout(fitGroup);
+    m_textFit = new QTextEdit;
+    m_textFit->setReadOnly(true);
+    m_textFit->setFont(QFont("Cascadia Code", 10));
+    fitLayout->addWidget(m_textFit);
+    formulaLayout->addWidget(fitGroup);
+
+    m_tabWidget->addTab(formulaTab, "📐 解析式");
 
     mainLayout->addWidget(m_tabWidget, 1);
 }
@@ -662,6 +745,12 @@ LinkageParams MainWindow::readParamsFromUi() const
     p.baseDistance = m_spinBaseDistance->value();
     p.servoAngleMin = m_spinServoMin->value();
     p.servoAngleMax = m_spinServoMax->value();
+    p.baseAngle = m_spinBaseAngle->value();
+    p.hornOriginDeg = m_spinHornOrigin->value();
+    p.hornLimitUpDeg = m_spinHornLimitUp->value();
+    p.hornLimitLoDeg = m_spinHornLimitLo->value();
+    p.servoLimitMinDeg = m_spinServoLimitMin->value();
+    p.servoLimitMaxDeg = m_spinServoLimitMax->value();
     return p;
 }
 
@@ -673,8 +762,12 @@ void MainWindow::writeParamsToUi(const LinkageParams &params, bool updateSliders
     m_spinBaseDistance->setValue(params.baseDistance);
     m_spinServoMin->setValue(params.servoAngleMin);
     m_spinServoMax->setValue(params.servoAngleMax);
-
-    // Sliders auto-update via valueChanged signal from spinboxes above
+    m_spinBaseAngle->setValue(params.baseAngle);
+    m_spinHornOrigin->setValue(params.hornOriginDeg);
+    m_spinHornLimitUp->setValue(params.hornLimitUpDeg);
+    m_spinHornLimitLo->setValue(params.hornLimitLoDeg);
+    m_spinServoLimitMin->setValue(params.servoLimitMinDeg);
+    m_spinServoLimitMax->setValue(params.servoLimitMaxDeg);
 }
 
 void MainWindow::displayAnalysis(const LinkageAnalysis &analysis)
@@ -764,6 +857,85 @@ void MainWindow::onCalculate()
     m_kinematicsView->setParams(params);
     m_kinematicsView->setSweepData(analysis.sweepResults);
     m_curvePlot->setAnalysisData(analysis);
+
+    // ── 填充解析式 Tab ──
+    {
+        double r1 = params.servoArmRadius, r2 = params.hornRadius;
+        double L = params.linkLength, d = params.baseDistance;
+        double baseRad = UnitSystem::degToRad(params.baseAngle);
+        double ox2 = d * cos(baseRad), oy2 = d * sin(baseRad);
+        QString f;
+        f += "═══ 闭环方程解析解 ═══\n\n";
+        f += QString("θ₂ = atan2(-(2·r₂·(o_y - r₁·sinθ₁)), -(2·r₂·(o_x - r₁·cosθ₁)))\n");
+        f += QString("      ± arccos(-A / √(B² + C²))\n\n");
+        f += QString("代入参数 (r₁=%1, r₂=%2, L=%3, d=%4, α=%5°):\n\n")
+            .arg(r1,0,'f',1).arg(r2,0,'f',1).arg(L,0,'f',1).arg(d,0,'f',1)
+            .arg(params.baseAngle,0,'f',1);
+        f += QString("A = o_x²+o_y²+r₁²+r₂²-L² - 2·r₁(o_x·cosθ₁ + o_y·sinθ₁)\n");
+        f += QString("  = %1²+%2²+%3²+%4²-%5² - 2·%3(%1·cosθ₁ + %2·sinθ₁)\n\n")
+            .arg(ox2,0,'f',2).arg(oy2,0,'f',2).arg(r1,0,'f',1).arg(r2,0,'f',1).arg(L,0,'f',1);
+        f += QString("B = 2·r₂·(o_x - r₁·cosθ₁)\n");
+        f += QString("C = 2·r₂·(o_y - r₁·sinθ₁)\n\n");
+
+        f += "═══ 三关键点解析值 ═══\n\n";
+        f += "θ₁       闭式 θ₂    闭式 μ    |  开式 θ₂    开式 μ\n";
+        f += "─────────────────────────────────────────────────\n";
+        double pts[] = {params.servoAngleMin, 0.0, params.servoAngleMax};
+        for (double t1 : pts) {
+            auto an = m_solver.solveForwardAnalytic(t1);
+            if (an.has_value()) {
+                f += QString("%1°  %2°  %3°  |  %4°  %5°\n")
+                    .arg(t1,5,'f',1)
+                    .arg(an->first.outputAngle,6,'f',2)
+                    .arg(an->first.transmissionAngle,6,'f',2)
+                    .arg(an->second.outputAngle,6,'f',2)
+                    .arg(an->second.transmissionAngle,6,'f',2);
+            }
+        }
+        m_textFormula->setText(f);
+
+        // 多项式拟合
+        auto &sweep = analysis.sweepResults;
+        if (sweep.size() >= 3) {
+            int n = sweep.size();
+            // 1阶 linear
+            double sx=0,sy=0,sxy=0,sx2=0,sy2=0;
+            for (auto &s : sweep) { double x=s.inputAngle,y=s.outputAngle; sx+=x;sy+=y;sxy+=x*y;sx2+=x*x;sy2+=y*y; }
+            double den = n*sx2-sx*sx;
+            double a1 = (n*sxy-sx*sy)/den;
+            double b1 = (sy-a1*sx)/n;
+            double ssRes=0,ssTot=0,meanY=sy/n;
+            for (auto &s : sweep) { double yp=a1*s.inputAngle+b1; ssRes+=(s.outputAngle-yp)*(s.outputAngle-yp); ssTot+=(s.outputAngle-meanY)*(s.outputAngle-meanY); }
+            double r2_1 = ssTot>1e-10 ? 1.0-ssRes/ssTot : 1.0;
+            // 2阶 quadratic
+            double sxx=0,sxxx=0,sxxxx=0,sxxy=0;
+            for (auto &s : sweep) { double x=s.inputAngle,y=s.outputAngle,x2=x*x; sxx+=x2;sxxx+=x*x2;sxxxx+=x2*x2;sxxy+=x2*y; }
+            double m2[3][3]={{1.*n,sx,sxx},{sx,sxx,sxxx},{sxx,sxxx,sxxxx}};
+            double rhs2[3]={sy,sxy,sxxy};
+            // Simple Gaussian elimination for 3x3
+            for(int i=0;i<3;i++){
+                double piv=m2[i][i];
+                for(int j=i;j<3;j++) m2[i][j]/=piv; rhs2[i]/=piv;
+                for(int k=i+1;k<3;k++){
+                    double fk=m2[k][i];
+                    for(int j=i;j<3;j++) m2[k][j]-=fk*m2[i][j]; rhs2[k]-=fk*rhs2[i];
+                }
+            }
+            double c2[3]; c2[2]=rhs2[2]; c2[1]=rhs2[1]-m2[1][2]*c2[2]; c2[0]=rhs2[0]-m2[0][1]*c2[1]-m2[0][2]*c2[2];
+            double ssRes2=0;
+            for(auto &s:sweep){ double yp=c2[0]+c2[1]*s.inputAngle+c2[2]*s.inputAngle*s.inputAngle; ssRes2+=(s.outputAngle-yp)*(s.outputAngle-yp); }
+            double r2_2 = ssTot>1e-10 ? 1.0-ssRes2/ssTot : 1.0;
+
+            QString fit;
+            fit += QString("1次 (线性): θ₂ = %1 + %2·θ₁   R²=%3\n")
+                .arg(b1,0,'f',2).arg(a1,0,'f',4).arg(r2_1,0,'f',4);
+            fit += QString("2次 (二次): θ₂ = %1 + %2·θ₁ + %3·θ₁²   R²=%4\n")
+                .arg(c2[0],0,'f',2).arg(c2[1],0,'f',4).arg(c2[2],0,'f',6).arg(r2_2,0,'f',4);
+            fit += QString("\n推荐: %1次多项式 (R²=%2)")
+                .arg(r2_2>r2_1?"2":"1").arg(QString::number(qMax(r2_1,r2_2),'f',4));
+            m_textFit->setText(fit);
+        }
+    }
 }
 
 void MainWindow::onQuickAnalyze()
