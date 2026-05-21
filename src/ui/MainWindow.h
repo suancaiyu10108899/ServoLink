@@ -44,6 +44,9 @@ public:
     explicit MainWindow(IStorageBackend *storage, QWidget *parent = nullptr);
     ~MainWindow() override = default;
 
+protected:
+    void closeEvent(QCloseEvent *event) override;
+
 private slots:
     void onCalculate();
     void onResetToDefault();

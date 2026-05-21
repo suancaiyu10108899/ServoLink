@@ -2,6 +2,7 @@
 #include <QMenuBar>
 #include <QMenu>
 #include <QAction>
+#include <QCloseEvent>
 #include <QMessageBox>
 #include <QScrollArea>
 #include <QJsonObject>
@@ -1047,4 +1048,18 @@ void MainWindow::loadStoredParams()
     if (paramsObj.isEmpty()) return;
     LinkageParams params = LinkageParams::fromJson(paramsObj);
     writeParamsToUi(params);
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if (m_storage) {
+        auto params = readParamsFromUi();
+        QJsonObject snapshot;
+        snapshot["version"] = 1;
+        snapshot["appName"] = "ServoLink";
+        snapshot["savedAt"] = QDateTime::currentDateTime().toString(Qt::ISODate);
+        snapshot["currentParams"] = params.toJson();
+        m_storage->saveAll(snapshot);
+    }
+    QMainWindow::closeEvent(event);
 }

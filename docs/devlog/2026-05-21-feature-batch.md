@@ -11,6 +11,7 @@
 - 02:43 – 全部编译通过、测试通过、推送 GitHub
 - 02:47 – 补全文档：ADR 0003、DevLog、CSV 定位标注+多项式系数区块
 - 03:15 – 修复基距倾角可视化 Bug（KinematicsView O₂ 未用 baseAngle），角度上限扩展到 ±180°
+- 2026-05-22 02:01 – 自动保存（closeEvent）+ KinematicsView 原点/限位标记线绘制
 
 ## 新增文件
 | 文件 | 说明 |

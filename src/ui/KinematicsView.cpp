@@ -187,6 +187,53 @@ void KinematicsView::drawMechanism(QPainter &painter)
     QPointF dMid = worldToPixel(ox2 / 2, oy2 / 2);
     painter.drawText(QPointF(dMid.x() - 6, dMid.y() + 16), "d");
 
+    // ── 定位标注：原点 / 限位线 ──
+    double r1 = m_params.servoArmRadius;
+    double len = qMin(r1, r2) * 0.8;  // 标记线长度
+
+    // 舵面原点 (绿色)
+    {
+        double rad = qDegreesToRadians(m_params.hornOriginDeg);
+        double bx = ox2 + r2 * cos(rad), by = oy2 + r2 * sin(rad);
+        QPointF p = worldToPixel(bx, by);
+        // 画一个小箭头/标记
+        QPen originPen(QColor("#10B981"), 1.5, Qt::DashLine);
+        painter.setPen(originPen);
+        painter.drawLine(o2, p);
+        painter.drawEllipse(p, 3, 3);
+        painter.setPen(QColor("#10B981"));
+        painter.setFont(QFont("Segoe UI", 7));
+        painter.drawText(QPointF(p.x() + 5, p.y() - 2), "原点");
+    }
+
+    // 舵面限位 (红色虚线)
+    {
+        QPen limitPen(QColor("#EF4444"), 1, Qt::DashLine);
+        painter.setPen(limitPen);
+        // 上限
+        double rUp = qDegreesToRadians(m_params.hornLimitUpDeg);
+        double bxUp = ox2 + r2 * cos(rUp), byUp = oy2 + r2 * sin(rUp);
+        painter.drawLine(o2, worldToPixel(bxUp, byUp));
+        // 下限
+        double rLo = qDegreesToRadians(m_params.hornLimitLoDeg);
+        double bxLo = ox2 + r2 * cos(rLo), byLo = oy2 + r2 * sin(rLo);
+        painter.drawLine(o2, worldToPixel(bxLo, byLo));
+    }
+
+    // 伺服限位 (橙色虚线)
+    {
+        QPen servoLimitPen(QColor("#F59E0B"), 1, Qt::DashLine);
+        painter.setPen(servoLimitPen);
+        // 上限
+        double sUpRad = qDegreesToRadians(m_params.servoLimitMinDeg);
+        double axUp = r1 * cos(sUpRad), ayUp = r1 * sin(sUpRad);
+        painter.drawLine(o1, worldToPixel(axUp, ayUp));
+        // 下限
+        double sLoRad = qDegreesToRadians(m_params.servoLimitMaxDeg);
+        double axLo = r1 * cos(sLoRad), ayLo = r1 * sin(sLoRad);
+        painter.drawLine(o1, worldToPixel(axLo, ayLo));
+    }
+
     // Info box
     QString info = QString("θ₁=%1° θ₂=%2° μ=%3°")
         .arg(m_state.inputAngle, 0, 'f', 1)
