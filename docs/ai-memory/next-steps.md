@@ -1,18 +1,17 @@
 # AI Memory — Next Steps
 
-## 当前任务序列
-1. [x] Phase 1 Foundation 完成
-2. [ ] Phase 2 Enhanced Calculator
-3. [ ] Phase 3 Visualization
-4. [ ] Phase 4 Optimizer GUI
-5. [ ] Phase 5 Polish
+## 项目已完成归档
+所有计划任务均已完成。详见 [项目回顾](project-retrospective.md)。
 
-## Phase 2 具体事项
-- [ ] 添加 QSlider 与 QDoubleSpinBox 双向联动
-- [ ] 创建预设参数库（常见舵机规格）
-- [ ] 结果导出 CSV
-- [ ] 参数历史撤销/重做
+## 已完成
+- [x] Phase 1 Foundation（Core 求解器 + Storage + 基础 UI）
+- [x] Phase 2 Enhanced Calculator（Slider + 预设库 + CSV + 撤消重做）
+- [x] Phase 3 Visualization（KinematicsView + CurvePlot）
+- [x] Phase 4 Optimizer GUI（OptimizeDialog + ReverseDialog）
+- [x] 装配模式切换 / 基距倾角 / 多项式拟合 / 动画进度条
+- [x] 自动保存 + 原点/限位可视化标注
+- [x] 教程体系（9篇 + 1篇开发手册）
+- [x] 项目回顾文档
 
-## 文档待补
-- [ ] `docs/personal-learning/` 下教学笔记（不上传 GitHub）
-- [ ] 每 Phase 结束后更新 DevLog
+## 归档状态
+**不再继续开发。** 工具已满足使用需求，后续精力转向装机实测和飞控调参。

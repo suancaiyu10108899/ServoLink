@@ -1,28 +1,30 @@
 # AI Memory — Current Status
 
 ## 项目状态
-- **日期**：2026-05-20
-- **版本**：v0.5.0 全功能完成
-- **阶段**：Phase 1-4 全部完成，36/36 测试通过
+- **日期**：2026-05-22
+- **版本**：v0.7.x — **已归档**
+- **阶段**：全部完成，不再继续开发
 
-## 最近完成的工作
-1. Phase 1: Foundation（Core 求解器 + Storage + 基础 UI）
-2. Phase 2: Enhanced Calculator（Slider 联动 + 预设库 + 撤消/重做 + CSV 导出）
-3. Phase 3: Visualization（KinematicsView 动画 + CurvePlot 曲线）
-4. Phase 4: Optimizer GUI（OptimizeDialog 集成）
-5. 完整文档体系（ADR × 2 + 架构文档 + 机构学理论 + DevLog × 2 + AI Memory）
+## 已完成功能
+1. 运动学正解（Newton-Raphson + 解析解验证）
+2. 全范围扫描评估（传动角/死点/线性度 R²）
+3. 参数优化器 + 输出优先反求设计
+4. 机构动画可视化 + 特性曲线 + 原点/限位标注
+5. 完整 CSV 工程报告（6 区块）
+6. JSON 持久化 + 自动保存 + 撤消重做
+7. 装配模式切换 / 基距倾角 / 多项式拟合
+8. 教程体系（9篇 + 1篇开发手册）
 
-## 当前 Task
-- ✅ 项目完成，等待用户醒来验证使用
+## 文档体系
+- ADR × 3（存储位置 / 求解方法 / 基距倾角）
+- DevLog × 3（项目初始化 / v0.5 基础构建 / 功能批量）
+- DebugLog × 1（IntelliSense 报红排查）
+- 架构文档 × 2（架构概览 / 机构学理论）
+- AI Memory × 5（项目上下文 / 当前状态 / 下一步 / 项目回顾）
+- 学习教程 × 9（程序本质 → 独立开发）
+- 开发手册 × 1（10章全面覆盖）
 
-## 关键设计决策
-- Newton-Raphson 迭代法正解（ADR 0002）
-- AppLocalData 存储路径（ADR 0001）
-- 四层架构对齐 MindPath（app/ui/core/storage）
-- 评分函数权重：线性度 0.4、传动角 0.3、偏转范围 0.3
+## 最终评估
+ServoLink 是一个以航模连杆为载体的 C++ 桌面应用开发训练项目。它首先是一本用真实代码写成的教科书，其次才是一个工程工具。
 
-## 用户偏好
-- 教学与项目开发分离：项目代码 + DevLog 上传 GitHub
-- 个人学习笔记留在 `docs/personal-learning/`，不上传
-- 教学越详细越好，使用 LaTeX 数学公式
-- 单位系统：mm + °
+详见 [项目回顾](project-retrospective.md)。
