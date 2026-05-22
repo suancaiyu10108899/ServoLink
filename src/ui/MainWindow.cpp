@@ -210,8 +210,8 @@ void MainWindow::setupUi()
     addPosRow("舵面原点 θ₂", 0, 360, 155.0, "°", m_spinHornOrigin);
     addPosRow("舵面上限 θ₂", 0, 360, 120.0, "°", m_spinHornLimitUp);
     addPosRow("舵面下限 θ₂", 0, 360, 180.0, "°", m_spinHornLimitLo);
-    addPosRow("伺服上限 θ₁", -180, 180, 90.0, "°", m_spinServoLimitMin);
-    addPosRow("伺服下限 θ₁", -180, 180, -90.0, "°", m_spinServoLimitMax);
+    addPosRow("伺服上限 θ₁", -180, 180, 90.0, "°", m_spinServoLimitMax);
+    addPosRow("伺服下限 θ₁", -180, 180, -90.0, "°", m_spinServoLimitMin);
     leftLayout->addWidget(posGroup);
 
     // 操作按钮组
@@ -687,8 +687,8 @@ void MainWindow::onExportCsv()
     out << "舵面原点_theta2_deg," << params.hornOriginDeg << "\n";
     out << "舵面上限_theta2_deg," << params.hornLimitUpDeg << "\n";
     out << "舵面下限_theta2_deg," << params.hornLimitLoDeg << "\n";
-    out << "伺服上限_theta1_deg," << params.servoLimitMinDeg << "\n";
-    out << "伺服下限_theta1_deg," << params.servoLimitMaxDeg << "\n";
+    out << "伺服上限_theta1_deg," << params.servoLimitMaxDeg << "\n";
+    out << "伺服下限_theta1_deg," << params.servoLimitMinDeg << "\n";
     out << "\n";
 
     // ═══════════════════════════════════════════

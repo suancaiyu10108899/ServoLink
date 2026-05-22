@@ -225,11 +225,11 @@ void KinematicsView::drawMechanism(QPainter &painter)
         QPen servoLimitPen(QColor("#F59E0B"), 1, Qt::DashLine);
         painter.setPen(servoLimitPen);
         // 上限
-        double sUpRad = qDegreesToRadians(m_params.servoLimitMinDeg);
+        double sUpRad = qDegreesToRadians(m_params.servoLimitMaxDeg);
         double axUp = r1 * cos(sUpRad), ayUp = r1 * sin(sUpRad);
         painter.drawLine(o1, worldToPixel(axUp, ayUp));
         // 下限
-        double sLoRad = qDegreesToRadians(m_params.servoLimitMaxDeg);
+        double sLoRad = qDegreesToRadians(m_params.servoLimitMinDeg);
         double axLo = r1 * cos(sLoRad), ayLo = r1 * sin(sLoRad);
         painter.drawLine(o1, worldToPixel(axLo, ayLo));
     }
