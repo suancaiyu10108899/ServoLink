@@ -207,9 +207,9 @@ void MainWindow::setupUi()
         connect(spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
                 this, [this]() { onCalculate(); });
     };
-    addPosRow("舵面原点 θ₂", 0, 360, 155.0, "°", m_spinHornOrigin);
-    addPosRow("舵面上限 θ₂", 0, 360, 120.0, "°", m_spinHornLimitUp);
-    addPosRow("舵面下限 θ₂", 0, 360, 180.0, "°", m_spinHornLimitLo);
+    addPosRow("舵面原点 θ₂", -180, 180, 155.0, "°", m_spinHornOrigin);
+    addPosRow("舵面上限 θ₂", -180, 180, 120.0, "°", m_spinHornLimitUp);
+    addPosRow("舵面下限 θ₂", -180, 180, -180.0, "°", m_spinHornLimitLo);
     addPosRow("伺服上限 θ₁", -180, 180, 90.0, "°", m_spinServoLimitMax);
     addPosRow("伺服下限 θ₁", -180, 180, -90.0, "°", m_spinServoLimitMin);
     leftLayout->addWidget(posGroup);
